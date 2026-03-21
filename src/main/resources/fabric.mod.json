@@ -3,15 +3,15 @@
 	"id": "groundslammer",
 	"version": "${version}",
 	"name": "GroundSlammer",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"description": "A client-side Fabric mod that improves landings in Minecraft, featuring custom particles and sound effects.",
 	"authors": [
 		"Codex.bat"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://codex-bat.github.io/",
+		"sources": "https://github.com/codex-bat/Fabric-GroundSlammer-1.19.2"
 	},
-	"license": "CC0-1.0",
+	"license": "GPL-3.0-or-later",
 	"icon": "assets/groundslammer/icon.png",
 	"environment": "*",
 	"entrypoints": {
