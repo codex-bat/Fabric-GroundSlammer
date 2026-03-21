@@ -1,0 +1,23 @@
+package net.codex.sound;
+
+import net.codex.GroundSlammer;
+import net.minecraft.util.registry.Registry;
+import net.minecraft.sound.SoundEvent;
+import net.minecraft.util.Identifier;
+
+public class ModSounds {
+    public static final SoundEvent LEAF_SLAM = registerSoundEvent("leaf_slam");
+    public static final SoundEvent SLAM = registerSoundEvent("slam");
+    public static final SoundEvent SNOW_SLAM = registerSoundEvent("snow_slam");
+    public static final SoundEvent ICE_SLAM = registerSoundEvent("ice_slam");
+    public static final SoundEvent WIND = registerSoundEvent("wind");
+
+    private static SoundEvent registerSoundEvent(String name) {
+        Identifier id = new Identifier(GroundSlammer.MOD_ID, name);
+        return Registry.register(Registry.SOUND_EVENT, id, new SoundEvent(id));
+    }
+
+    public static void registerSounds() {
+        GroundSlammer.LOGGER.info("Registering Sounds for: " + GroundSlammer.MOD_ID);
+    }
+}
