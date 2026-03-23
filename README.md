@@ -60,9 +60,9 @@ cd Fabric-GroundSlammer
 
 ## 📜 License
 
-This project is licensed under the GPL‑3.0‑or‑later.
-\nYou are free to use, modify, and distribute it as long as you comply with the license terms.
-\nSee the [LICENSE](LICENSE) file for details.
+This project is licensed under the GPL‑3.0‑or‑later.  
+You are free to use, modify, and distribute it as long as you comply with the license terms.  
+See the [LICENSE](LICENSE) file for details.
 
 ---
 
