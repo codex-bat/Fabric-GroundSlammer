@@ -45,3 +45,26 @@ If you want to compile the mod yourself:
 git clone https://github.com/codex-bat/Fabric-GroundSlammer.git
 cd Fabric-GroundSlammer
 ./gradlew build# GroundSlammer
+```
+
+---
+
+## 🧪 Planned Features
+
+- Configuration file to tweak particle density, sound volume, and enable/disable specific effects
+- Support for Minecraft 1.20.4 and 1.21.x
+- More particle variants for additional block types
+- Option to use vanilla particles for performance
+
+## 📜 License
+
+This project is licensed under the GPL‑3.0‑or‑later.
+You are free to use, modify, and distribute it as long as you comply with the license terms.
+See the LICENSE file for details.
+
+## 💬 Contact & Support
+
+- Discord: [Join the community](codex-bat.github.io/discord)
+- GitHub Issues: [Report bugs or suggest features](https://github.com/codex-bat/Fabric-GroundSlammer/issues)
+- Modrinth: [Frontpage](https://modrinth.com/mod/groundslammer)
+
