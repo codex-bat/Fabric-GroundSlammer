@@ -62,7 +62,7 @@ cd Fabric-GroundSlammer
 
 This project is licensed under the GPL‑3.0‑or‑later.
 You are free to use, modify, and distribute it as long as you comply with the license terms.
-See the LICENSE file for details.
+See the [LICENSE](https://license.md/) file for details.
 
 ---
 
