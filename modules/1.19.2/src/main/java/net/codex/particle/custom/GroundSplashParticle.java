@@ -16,7 +16,7 @@ public class GroundSplashParticle extends SpriteBillboardParticle {
     private final float sizeMultiplier;
     private final float heightMultiplier;
 
-    private static final int SIDE_FRAMES = 10;  // adjust to match your combined json
+    private static final int SIDE_FRAMES = 10;
     private static final int BOTTOM_FRAMES = 10;
 
     // Outer skirt configuration (tweak these)

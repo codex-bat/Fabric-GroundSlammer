@@ -13,9 +13,9 @@ import org.slf4j.LoggerFactory;
 public class GroundSlammer implements ModInitializer {
 	public static final String MOD_ID = "groundslammer";
 
-	// This logger is used to write text to the console and the log file.
-	// It is considered best practice to use your mod id as the logger's name.
-	// That way, it's clear which mod wrote info, warnings, and errors.
+	   // This logger is used to write text to the console and the log file.
+	  // It is considered best practice to use your mod id as the logger's name.
+	 // That way, it's clear which mod wrote info, warnings, and errors.
 	// Ik, templater... but ty for telling me anyway ^^
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
@@ -25,6 +25,6 @@ public class GroundSlammer implements ModInitializer {
 
 		ModSounds.registerSounds();
 
-		LOGGER.info("Hello Fabric world!");
+		LOGGER.info("Hello 1.19.2 Fabric world!");
 	}
 }

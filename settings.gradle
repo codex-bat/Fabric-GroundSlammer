@@ -8,3 +8,10 @@ pluginManagement {
 		gradlePluginPortal()
 	}
 }
+
+rootProject.name = "GroundSlammer"
+
+include("common", "mc1192", "mc1204")
+project(":common").projectDir = file("modules/common")
+project(":mc1192").projectDir = file("modules/1.19.2")
+project(":mc1204").projectDir = file("modules/1.20.4")
