@@ -56,11 +56,15 @@ cd Fabric-GroundSlammer
 - More particle variants for additional block types
 - Option to use vanilla particles for performance
 
+---
+
 ## 📜 License
 
 This project is licensed under the GPL‑3.0‑or‑later.
 You are free to use, modify, and distribute it as long as you comply with the license terms.
 See the LICENSE file for details.
+
+---
 
 ## 💬 Contact & Support
 
@@ -68,3 +72,4 @@ See the LICENSE file for details.
 - GitHub Issues: [Report bugs or suggest features](https://github.com/codex-bat/Fabric-GroundSlammer/issues)
 - Modrinth: [Frontpage](https://modrinth.com/mod/groundslammer)
 
+---
