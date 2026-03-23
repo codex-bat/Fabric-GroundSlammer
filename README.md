@@ -42,8 +42,8 @@ Check out the mod in action:
 If you want to compile the mod yourself:
 
 ```bash
-git clone https://github.com/codex-bat/Fabric-GroundSlammer-1.19.2.git
-cd Fabric-GroundSlammer-1.19.2
+git clone https://github.com/codex-bat/Fabric-GroundSlammer.git
+cd Fabric-GroundSlammer
 ./gradlew build# GroundSlammer
 
 ![GroundSlammer logo](https://cdn.modrinth.com/data/cached_images/951861b0f270da6b8a57c00b2b18a0ec241fd003.png)
