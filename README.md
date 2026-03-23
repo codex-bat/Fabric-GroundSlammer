@@ -64,7 +64,7 @@ See the LICENSE file for details.
 
 ## 💬 Contact & Support
 
-- Discord: [Join the community](codex-bat.github.io/discord)
+- Discord: [Join the community](https://codex-bat.github.io/discord)
 - GitHub Issues: [Report bugs or suggest features](https://github.com/codex-bat/Fabric-GroundSlammer/issues)
 - Modrinth: [Frontpage](https://modrinth.com/mod/groundslammer)
 
