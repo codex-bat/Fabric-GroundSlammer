@@ -27,6 +27,9 @@ dependencies {
 
 sourceSets {
 	main {
+		java {
+			srcDir rootProject.layout.projectDirectory.dir("modules/common/src/main/java")
+		}
 		resources {
 			srcDir rootProject.layout.projectDirectory.dir("modules/common/src/main/resources")
 		}

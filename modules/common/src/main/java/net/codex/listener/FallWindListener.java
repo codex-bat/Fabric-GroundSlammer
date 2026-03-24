@@ -140,7 +140,7 @@ public final class FallWindListener {
 
         public PlayerWindSound(PlayerEntity player) {
             // Use the world's existing random (correct type) instead of creating/casting java.util.Random.
-            super(ModSounds.WIND, SoundCategory.AMBIENT, player.world.random);
+            super(ModSounds.WIND, SoundCategory.AMBIENT, player.getWorld().random);
             this.player = player;
             this.repeat = true;
             this.repeatDelay = 0;

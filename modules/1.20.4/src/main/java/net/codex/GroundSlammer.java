@@ -20,8 +20,6 @@ public class GroundSlammer implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        System.out.println("[GroundSlammer] Registered particle: ground_splash");
-
         ModSounds.registerSounds();
 
         LOGGER.info("Hello 1.20.4 Fabric world!");

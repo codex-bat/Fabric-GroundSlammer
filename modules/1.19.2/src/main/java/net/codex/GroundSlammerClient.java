@@ -3,7 +3,6 @@
 
 package net.codex;
 
-import net.codex.listener.ElytraImpactListener;
 import net.codex.listener.FallWindListener;
 import net.codex.particle.ModParticleFactories;
 import net.codex.particle.ModParticles;
