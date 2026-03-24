@@ -23,7 +23,7 @@
 3. Place the JAR in your `mods` folder
 4. Launch Minecraft with the Fabric profile
 
-*Note: This mod is currently tested for Minecraft **1.19.2**. Versions for 1.20.4 and 1.21.x are planned.*
+*Note: This mod is currently tested for Minecraft **1.19.2** and **1.20.4** (soon it'll be released). A few more versions, including 1.21.x are planned.*
 
 ---
 
@@ -52,7 +52,8 @@ cd Fabric-GroundSlammer
 ## 🧪 Planned Features
 
 - Configuration file to tweak particle density, sound volume, and enable/disable specific effects
-- Support for Minecraft 1.20.4 and 1.21.x
+- New Minecraft 1.20.4-related features
+- Support for Minecraft 1.21.x
 - More particle variants for additional block types
 - Option to use vanilla particles for performance
 
