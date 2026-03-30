@@ -3,6 +3,9 @@
 
 package net.codex;
 
+import net.codex.camera.CameraShakeManager;
+import net.codex.config.GroundslammerClientConfig;
+import net.codex.event.GroundSlamEvent;
 import net.codex.listener.FallWindListener;
 import net.codex.particle.ModParticleFactories;
 import net.codex.particle.ModParticles;
@@ -10,7 +13,7 @@ import net.codex.particle.custom.CherryBlossomParticleEffect;
 import net.codex.particle.custom.GroundSplashParticleEffect;
 import net.codex.particle.custom.LeafParticleEffect;
 import net.codex.particle.custom.SplashDropletParticleEffect;
-import net.codex.sound.ModSounds;
+import net.codex.sound.CaveSoundHandler;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.block.BlockState;
@@ -43,27 +46,32 @@ public class GroundSlammerClient implements ClientModInitializer {
 
     private int cleanupTicker = 0;
 
-    private static final double IMPACT_SCALE = 1.5;
-    private static final float MIN_HEIGHT_MULT = 0.9f;
-    private static final float MAX_HEIGHT_MULT = 6f;
-    private static final float MIN_SIZE_MULT = 0.6f;
-    private static final float MAX_SIZE_MULT = 3.0f;
-    private static final float HEIGHT_REDUCTION_FACTOR = 2.0f;
-    private static final int COMPLEX_EXTRA_BLOCKS = 2;
-    private static final double MIN_IMPACT_VELOCITY = 0.9;
-    private static final long SPAWN_COOLDOWN_MS = 100L;
-    private static final long PENDING_TTL_MS = 300L;
-    private static final int SAMPLE_GRID = 3;
-    private static final double SPAWN_Y_EPS = 0.02D;
+    // New config instance
+    private static GroundslammerClientConfig clientConfig = new GroundslammerClientConfig();
+
+    public static GroundslammerClientConfig getConfig() {
+        return clientConfig;
+    }
 
     @Override
     public void onInitializeClient() {
+        loadConfig(); // load from file
         ModParticleFactories.registerFactories();
         FallWindListener.register();
         //ElytraImpactListener.register();
 
+        // Register camera shake
+        GroundSlamEvent.EVENT.register(this::onGroundSlam);
+        ClientTickEvents.END_CLIENT_TICK.register(client -> CameraShakeManager.tick());
+
+        CaveSoundHandler.register();
+
+        // Register ticks
         ClientTickEvents.START_CLIENT_TICK.register(this::onClientTickStart);
         ClientTickEvents.END_CLIENT_TICK.register(this::onClientTick);
+
+        // Load from JSON / ModMenu config here, then:
+        applyConfig();
     }
 
     private void onClientTick(MinecraftClient client) {
@@ -99,12 +107,12 @@ public class GroundSlammerClient implements ClientModInitializer {
                 continue;
             }
 
-            if (!wasOnGround && isOnGround && prevVelY < -MIN_IMPACT_VELOCITY) {
+            if (!wasOnGround && isOnGround && prevVelY < -clientConfig.detection.minImpactVelocity) {
                 SUPPRESSED_ENTITIES.add(entity);
                 suppressionTicks.put(entity, 2); // 2 ticks is perfect, I think!?
 
                 long last = lastSpawnMs.getOrDefault(entity, 0L);
-                if (nowMs - last >= SPAWN_COOLDOWN_MS) {
+                if (nowMs - last >= clientConfig.detection.spawnCooldownMs) {
                     handleLanding(world, player, entity, nowMs, prevVelY);
                 }
             }
@@ -132,7 +140,6 @@ public class GroundSlammerClient implements ClientModInitializer {
     }
 
 
-
     private void onClientTickStart(MinecraftClient client) {
         ClientWorld world = client.world;
         if (world == null || client.isPaused()) {
@@ -151,7 +158,7 @@ public class GroundSlammerClient implements ClientModInitializer {
             boolean isOnGround = entity.isOnGround();
 
             // PRE-LANDING DETECTION --- ABSOLUTE HOT GARBAGE 🔥
-            if (!isOnGround && currVelY < -MIN_IMPACT_VELOCITY) {
+            if (!isOnGround && currVelY < -clientConfig.detection.minImpactVelocity) {
                 double nextY = entity.getBoundingBox().minY + currVelY;
 
                 // If we're about to cross a block boundary downward → landing soon
@@ -161,6 +168,17 @@ public class GroundSlammerClient implements ClientModInitializer {
                 }
             }
         }
+    }
+
+    private void loadConfig() {
+        clientConfig = GroundslammerClientConfig.load();
+        applyConfig();
+    }
+
+    public static void applyConfig() {
+        // Update systems that depend on config
+        // VoidFogController.setConfig(clientConfig.voidFog);
+        // You may also update other subsystems like sound volumes, particle settings, etc.
     }
 
     private void processPendingSpawns(ClientWorld world, PlayerEntity player, long nowMs) {
@@ -179,13 +197,13 @@ public class GroundSlammerClient implements ClientModInitializer {
                 continue;
             }
 
-            if (nowMs - ps.startMs > PENDING_TTL_MS) {
+            if (nowMs - ps.startMs > clientConfig.detection.pendingTtlMs) {
                 it.remove();
                 continue;
             }
 
             double feetY = entity.getBoundingBox().minY;
-            if (feetY <= ps.spawnY + SPAWN_Y_EPS || entity.isOnGround()) {
+            if (feetY <= ps.spawnY + clientConfig.detection.spawnYEps || entity.isOnGround()) {
                 spawnGroundSlam(world, player, ps.spawnX, ps.spawnY, ps.spawnZ,
                         ps.sizeMultiplier, ps.heightMultiplier,
                         ps.red, ps.green, ps.blue,
@@ -201,15 +219,15 @@ public class GroundSlammerClient implements ClientModInitializer {
     private void handleLanding(ClientWorld world, PlayerEntity player, Entity entity, long nowMs, double prevVelY) {
         float entityWidth = entity.getWidth();
         float rawSize = entityWidth * 1.1f;
-        float sizeMultiplier = MathHelper.clamp(rawSize, MIN_SIZE_MULT, MAX_SIZE_MULT);
+        float sizeMultiplier = MathHelper.clamp(rawSize, clientConfig.impact.minSizeMult, clientConfig.impact.maxSizeMult);
 
         double impact = Math.abs(prevVelY);
-        float rawHeight = 1.0f + (float) (impact / IMPACT_SCALE);
+        float rawHeight = 1.0f + (float) (impact / clientConfig.impact.impactScale);
 
-        float sizeFactor = 1.0f / (1.0f + (entityWidth - 0.6f) * HEIGHT_REDUCTION_FACTOR);
+        float sizeFactor = 1.0f / (1.0f + (entityWidth - 0.6f) * clientConfig.impact.heightReductionFactor);
         sizeFactor = MathHelper.clamp(sizeFactor, 0.2f, 1.0f);
 
-        float heightMultiplier = MathHelper.clamp(rawHeight * sizeFactor, MIN_HEIGHT_MULT, MAX_HEIGHT_MULT);
+        float heightMultiplier = MathHelper.clamp(rawHeight * sizeFactor, clientConfig.impact.minHeightMult, clientConfig.impact.maxHeightMult);
 
         Box bbox = entity.getBoundingBox();
         double minX = bbox.minX;
@@ -228,10 +246,10 @@ public class GroundSlammerClient implements ClientModInitializer {
         boolean found = false;
         BlockPos bestBlockPos = null;
 
-        for (int ix = 0; ix < SAMPLE_GRID; ix++) {
-            double sx = MathHelper.lerp((double) ix / (SAMPLE_GRID - 1), minX, maxX);
-            for (int iz = 0; iz < SAMPLE_GRID; iz++) {
-                double sz = MathHelper.lerp((double) iz / (SAMPLE_GRID - 1), minZ, maxZ);
+        for (int ix = 0; ix < clientConfig.detection.sampleGrid; ix++) {
+            double sx = MathHelper.lerp((double) ix / (clientConfig.detection.sampleGrid - 1), minX, maxX);
+            for (int iz = 0; iz < clientConfig.detection.sampleGrid; iz++) {
+                double sz = MathHelper.lerp((double) iz / (clientConfig.detection.sampleGrid - 1), minZ, maxZ);
 
                 BlockPos.Mutable scanPos = new BlockPos.Mutable(
                         MathHelper.floor(sx),
@@ -317,19 +335,21 @@ public class GroundSlammerClient implements ClientModInitializer {
                 || blockUnder.isOf(Blocks.FROSTED_ICE);
         boolean isGlassBlock = blockUnder.isOf(Blocks.GLASS);
 
-        SoundEvent slamToPlay = ModSounds.SLAM;
-        if (isSnow) {
-            slamToPlay = ModSounds.SNOW_SLAM;
-        } else if (isIce || isGlassBlock) {
-            slamToPlay = ModSounds.ICE_SLAM;
-        }
+        SoundEvent slamToPlay = clientConfig.sound.slamSound;
+        if (isSnow) slamToPlay = clientConfig.sound.snowSlamSound;
+        else if (isIce || isGlassBlock) slamToPlay = clientConfig.sound.iceSlamSound;
 
         float amountMultiplier = 0;
-        if (feetY <= spawnY + SPAWN_Y_EPS || entity.isOnGround()) {
+        if (feetY <= spawnY + clientConfig.detection.spawnYEps || entity.isOnGround()) {
             amountMultiplier = MathHelper.clamp(entityWidth, 0.6f, 3.0f);
 
+            if (entity == MinecraftClient.getInstance().player) {
+                //System.out.println("Ground slam event firing with velocity: " + Math.abs(prevVelY));
+                GroundSlamEvent.EVENT.invoker().onGroundSlam(entity, Math.abs(prevVelY));
+            }
+
             if (onLeaves) {
-                slamToPlay = ModSounds.LEAF_SLAM;
+                slamToPlay = clientConfig.sound.leafSlamSound;
 
                 // Get leaf colour from the block’s map colour
                 int color = blockUnder.getMapColor(world, landingBlockPos).color;
@@ -337,7 +357,7 @@ public class GroundSlammerClient implements ClientModInitializer {
                 float g = channel(color, 8);
                 float b = channel(color, 0);
 
-                int leafCount = (int) (8 * sizeMultiplier);
+                int leafCount = (int) (clientConfig.leaf.leafCountBase * sizeMultiplier);
 
                 // 🍒 CHERRY LEAVES HANDLING
                 if (blockUnder.isOf(Blocks.CHERRY_LEAVES)) {
@@ -358,6 +378,11 @@ public class GroundSlammerClient implements ClientModInitializer {
 
             lastSpawnMs.put(entity, nowMs);
         } else {
+            if (entity == MinecraftClient.getInstance().player) {
+                //System.out.println("Ground slam event firing with velocity: " + Math.abs(prevVelY));
+                GroundSlamEvent.EVENT.invoker().onGroundSlam(entity, Math.abs(prevVelY));
+            }
+
             boolean useSimple = isAreaOpen(world, entity, spawnX, spawnY, spawnZ);
             pendingSpawns.put(entity, new PendingSpawn(
                     spawnX, spawnY, spawnZ,
@@ -365,6 +390,12 @@ public class GroundSlammerClient implements ClientModInitializer {
                     red, green, blue,
                     useSimple, amountMultiplier, nowMs, slamToPlay
             ));
+        }
+    }
+
+    private void onGroundSlam(Entity entity, double downwardVelocity) {
+        if (entity == MinecraftClient.getInstance().player) {
+            CameraShakeManager.addImpact((float) downwardVelocity);
         }
     }
 
@@ -476,15 +507,15 @@ public class GroundSlammerClient implements ClientModInitializer {
             }
         }
 
-        return solidCount < (threshold + COMPLEX_EXTRA_BLOCKS);
+        return solidCount < (threshold + clientConfig.detection.complexExtraBlocks);
     }
 
     private void spawnDropletBurst(ClientWorld world, double cx, double cy, double cz,
                                    float heightMultiplier,
                                    float red, float green, float blue, float amountMultiplier) {
-        int count = (int) (8 * amountMultiplier);
-        double upwardMin = 0.25;
-        double upwardMax = 0.45;
+        int count = (int) (clientConfig.particle.dropletBurstBase * amountMultiplier);
+        double upwardMin = clientConfig.particle.dropletUpwardMin;
+        double upwardMax = clientConfig.particle.dropletUpwardMax;
         boolean rainingHere = world.isRaining() || world.hasRain(BlockPos.ofFloored(cx, cy, cz));
         ParticleType<SplashDropletParticleEffect> chosenType = rainingHere
                 ? ModParticles.SPLASH_PIXEL_RAIN
@@ -520,29 +551,33 @@ public class GroundSlammerClient implements ClientModInitializer {
             float r, float g, float b,
             ParticleType<LeafParticleEffect> particleType,
             PlayerEntity player) {
-        world.playSound(
+            world.playSound(
                 player,
                 x, y, z,
-                ModSounds.LEAF_SLAM,
+                clientConfig.sound.leafSlamSound,
                 SoundCategory.BLOCKS,
                 1.0f, 1.0f
         );
 
         for (int i = 0; i < leafCount; i++) {
             double angle = world.random.nextDouble() * Math.PI * 2.0D;
-            double radialOffset = 0.06D + world.random.nextDouble() * 0.22D;
+            double radialOffset = clientConfig.particle.leafRadialOffsetMin +
+                    world.random.nextDouble() *
+                            (clientConfig.particle.leafRadialOffsetMax - clientConfig.particle.leafRadialOffsetMin);
             double spawnX = x + Math.cos(angle) * radialOffset;
             double spawnZ = z + Math.sin(angle) * radialOffset;
             double spawnY = y + (world.random.nextDouble() * 0.08D);
 
-            double vx = Math.cos(angle) * 0.03D;
-            double vz = Math.sin(angle) * 0.03D;
-            double vy = 0.02D + world.random.nextDouble() * 0.04D;
+            double vx = Math.cos(angle) * clientConfig.particle.leafVelocityXZ;
+            double vz = Math.sin(angle) * clientConfig.particle.leafVelocityXZ;
+            double vy = clientConfig.particle.leafVelocityYMin +
+                    world.random.nextDouble() *
+                            (clientConfig.particle.leafVelocityYMax - clientConfig.particle.leafVelocityYMin);
 
             world.addParticle(new LeafParticleEffect(
                     particleType,
-                    0.05f,
-                    0.1f,
+                    clientConfig.leaf.leafParticleSizeMin,
+                    clientConfig.leaf.leafParticleSizeMax,
                     r, g, b
             ), spawnX, spawnY, spawnZ, vx, vy, vz);
         }
@@ -557,7 +592,7 @@ public class GroundSlammerClient implements ClientModInitializer {
         world.playSound(
                 player,
                 x, y, z,
-                ModSounds.LEAF_SLAM,          // or a dedicated cherry sound
+                clientConfig.sound.cherryLeafSlamSound,
                 SoundCategory.BLOCKS,
                 1.0f, 1.0f
         );

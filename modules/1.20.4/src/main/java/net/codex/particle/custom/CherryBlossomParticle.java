@@ -1,8 +1,10 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Codex.bat
+
 package net.codex.particle.custom;
 
 import net.minecraft.client.particle.*;
 import net.minecraft.client.world.ClientWorld;
-import net.minecraft.particle.ParticleType;
 
 public class CherryBlossomParticle extends SpriteBillboardParticle {
 

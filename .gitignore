@@ -38,3 +38,7 @@ hs_err_*.log
 replay_*.log
 *.hprof
 *.jfr
+/modules/1.20.4/src/main/resources/assets/groundslammer/textures/particle/cherry1.png
+/modules/1.20.4/src/main/resources/assets/groundslammer/textures/particle/cherry2.png
+/modules/1.20.4/src/main/resources/assets/groundslammer/textures/particle/cherry3.png
+/modules/1.20.4/src/main/resources/assets/groundslammer/textures/particle/cherry4.png

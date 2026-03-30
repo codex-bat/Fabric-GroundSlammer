@@ -3,7 +3,9 @@
 	"package": "net.codex.mixin",
 	"compatibilityLevel": "JAVA_17",
 	"client": [
-		"ClientWorldMixin"
+		"ClientWorldMixin",
+		"GameRendererMixin",
+		"CameraMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

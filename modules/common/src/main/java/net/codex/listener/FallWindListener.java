@@ -18,37 +18,39 @@ import net.minecraft.util.math.Vec3d;
  * - Pauses (mutes) the sound when a pause-screen is open in singleplayer (Screen.shouldPause()).
  * - Also treats CommandBlockScreen (singleplayer) as pausing so command blocks can't keep running the sound.
  * - Does NOT pause for ordinary inventories that don't stop the game.
- *
+ * - CURRENTLY WORKS FOR BOTH 1.19.2 AND 1.20.4. ONCE NEWER VERSIONS ARE FORKED, THIS WILL BE MOVED AND COPIED TO ITS...
+ * - RESPECTIVE MODULES IN VARIOUS FORMS.
+ * <p>
  * Register with: FallWindListener.register();
  */
 public final class FallWindListener {
-    // the single tracked moving sound instance
     private static PlayerWindSound windInstance = null;
 
-    // short guard to avoid playing on tiny hops: must be falling for this many ticks
     private static final int FALL_TICKS_THRESHOLD = 5;
-
-    // vertical velocity thresholds (tweak as needed)
-    private static final double START_VEL_Y = -0.5; // start when falling faster than this
-    private static final double STOP_VEL_Y  = -0.05; // stop when vertical speed recovers above this
+    private static final double START_VEL_Y = -0.5;
+    private static final double STOP_VEL_Y  = -0.05;
 
     private static int fallTicks = 0;
+    private static float fallVisualIntensity = 0.0f;
+    private static float prevFallVisualIntensity = 0.0f;
     private static MinecraftClient lastClientForWorldCheck = null;
 
-    private FallWindListener() {} // no instances
+    private FallWindListener() {}
 
-    /** Call once on your client init (keeps listener code separate). */
+    public static float getFallVisualIntensity() {
+        return fallVisualIntensity;
+    }
+
     public static void register() {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client == null) return;
 
-            // If world or player missing -> stop & cleanup
             if (client.world == null || client.player == null) {
                 stopWind(client);
+                fallVisualIntensity = 0.0f;
                 return;
             }
 
-            // If client changed (resource reload / world reload), stop existing sound
             if (lastClientForWorldCheck != client) {
                 stopWind(client);
                 lastClientForWorldCheck = client;
@@ -57,47 +59,50 @@ public final class FallWindListener {
             PlayerEntity player = client.player;
 
             boolean inGui = client.currentScreen != null;
-            // screenPausesGame is true if the screen normally pauses the game OR it's the command-block screen
             boolean screenPausesGame = false;
             if (inGui) {
                 Screen s = client.currentScreen;
                 screenPausesGame = s.shouldPause() || (s instanceof CommandBlockScreen);
             }
-            boolean singleplayer = client.isIntegratedServerRunning(); // integrated server = singleplayer (or LAN host)
+            boolean singleplayer = client.isIntegratedServerRunning();
 
             boolean isFlying = player.getAbilities().flying || player.isFallFlying();
             boolean onGround = player.isOnGround();
             double vy = player.getVelocity().y;
 
-            // START condition: not in a GUI that should block (allow non-pausing GUIs),
-            // not flying, not on ground, and vertical speed low enough
             boolean guiBlocksStart = inGui && screenPausesGame && singleplayer;
+
+            float targetIntensity = 0.0f;
+
             if (!guiBlocksStart && !isFlying && !onGround && vy < START_VEL_Y) {
                 fallTicks = Math.min(fallTicks + 1, FALL_TICKS_THRESHOLD);
+
+                double speedFactor = Math.min(1.0, Math.max(0.0, (-vy - 0.5) / 2.5));
+                float timeFactor = fallTicks / (float) FALL_TICKS_THRESHOLD;
+                targetIntensity = (float) Math.max(speedFactor, timeFactor);
+
                 if (fallTicks >= FALL_TICKS_THRESHOLD && windInstance == null) {
                     startWind(client, player);
                 }
             } else {
-                // reset fall counter if not in a falling state
                 fallTicks = 0;
 
-                // STOP the sound if no longer falling/conditions removed
                 if (windInstance != null) {
                     if (isFlying || onGround || vy >= STOP_VEL_Y) {
-                        // fully stop and cleanup
                         stopWind(client);
                     }
                 }
             }
 
-            // If the sound is playing, update its paused/unpaused state based on whether
-            // the open screen actually pauses the game in singleplayer.
+            prevFallVisualIntensity = fallVisualIntensity;
+
+            float lerp = targetIntensity > fallVisualIntensity ? 0.18f : 0.10f;
+            fallVisualIntensity += (targetIntensity - fallVisualIntensity) * lerp;
+
             if (windInstance != null) {
                 boolean shouldPauseSound = (inGui && screenPausesGame && singleplayer);
                 windInstance.setMuted(shouldPauseSound);
-                // keep following the player's current position so attenuation works
                 windInstance.updatePosition(player.getPos());
-                // if the player somehow got removed, stop
                 if (player.isRemoved()) stopWind(client);
             }
         });
@@ -105,7 +110,7 @@ public final class FallWindListener {
 
     private static void startWind(MinecraftClient client, PlayerEntity player) {
         if (client == null || client.getSoundManager() == null) return;
-        if (windInstance != null) return; // already playing
+        if (windInstance != null) return;
 
         try {
             windInstance = new PlayerWindSound(player);
@@ -127,6 +132,10 @@ public final class FallWindListener {
             } catch (Throwable ignored) {}
             windInstance = null;
         }
+    }
+
+    public static float getFallVisualIntensity(float tickDelta) {
+        return prevFallVisualIntensity + (fallVisualIntensity - prevFallVisualIntensity) * tickDelta;
     }
 
     /**
@@ -184,7 +193,9 @@ public final class FallWindListener {
         public float getVolume() {
             // While "muted" (paused GUI in singleplayer), return zero so sound is inaudible,
             // but the sound engine still progresses the stream. When unmuted I return baseVolume.
-            return this.muted ? 0.0f : this.baseVolume;
+            float target = this.muted ? 0.0f : 1.0f;
+            this.volume += (target - this.volume) * 0.15f;
+            return this.volume * baseVolume;
         }
     }
 }

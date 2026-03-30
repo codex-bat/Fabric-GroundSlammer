@@ -9,7 +9,15 @@
   ],
   "contact": {
     "homepage": "https://codex-bat.github.io/",
-    "sources": "https://github.com/codex-bat/Fabric-GroundSlammer-1.19.2"
+    "sources": "https://github.com/codex-bat/Fabric-GroundSlammer-1.19.2",
+    "issues": "https://github.com/codex-bat/Fabric-GroundSlammer-1.19.2/issues"
+  },
+  "custom": {
+    "modmenu": {
+      "links": {
+        "groundslammer.discord": "https://discord.gg/9EBsDhJDUN"
+      }
+    }
   },
   "license": "GPL-3.0-or-later",
   "icon": "assets/groundslammer/icon.png",
@@ -23,6 +31,9 @@
     ],
     "client": [
       "net.codex.GroundSlammerClient"
+    ],
+    "modmenu": [
+      "net.codex.config.ModMenuIntegration"
     ]
   },
   "mixins": [
@@ -32,6 +43,10 @@
     "fabricloader": ">=0.18.4",
     "minecraft": "~${minecraft_version}",
     "java": ">=17",
-    "fabric-api": "*"
+    "fabric-api": "*",
+    "cloth-config": "*"
+  },
+  "suggests": {
+    "modmenu": "*"
   }
 }

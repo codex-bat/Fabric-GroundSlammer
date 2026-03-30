@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Codex.bat
+
 package net.codex.sound;
 
 import net.codex.GroundSlammer;
@@ -11,6 +14,7 @@ public class ModSounds {
     public static final SoundEvent SNOW_SLAM = registerSoundEvent("snow_slam");
     public static final SoundEvent ICE_SLAM = registerSoundEvent("ice_slam");
     public static final SoundEvent WIND = registerSoundEvent("wind");
+    public static final SoundEvent CAVE = registerSoundEvent("cave");
 
     private static SoundEvent registerSoundEvent(String name) {
         Identifier id = new Identifier(GroundSlammer.MOD_ID, name);

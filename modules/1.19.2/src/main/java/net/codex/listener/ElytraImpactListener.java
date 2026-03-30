@@ -3,6 +3,7 @@
 
 package net.codex.listener;
 
+import net.codex.elytra.ElytraTrailManager;
 import net.codex.particle.ModParticles;
 import net.codex.particle.custom.DirectedImpactParticleEffect;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -11,6 +12,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.Vec3d;
 
 public final class ElytraImpactListener {
+    private static final ElytraTrailManager trailManager = new ElytraTrailManager();
     private static final int COOLDOWN_TICKS = 20;
     private static final double SPEED_THRESHOLD = 1.5;
     private static final float PARTICLE_SIZE = 1.0f;
@@ -27,13 +29,21 @@ public final class ElytraImpactListener {
             }
 
             PlayerEntity player = client.player;
-            if (!player.isFallFlying()) return;
 
-            double speed = player.getVelocity().horizontalLength();
-            if (speed >= SPEED_THRESHOLD) {
-                spawnImpactParticle(client, player);
-                cooldown = COOLDOWN_TICKS;
+            // Update the trail history
+            trailManager.update(player);
+
+            // Optionally, you can still spawn your original impact particle
+            if (player.isFallFlying()) {
+                double speed = player.getVelocity().horizontalLength();
+                if (speed >= SPEED_THRESHOLD && cooldown == 0) {
+                    spawnImpactParticle(client, player);
+                    cooldown = COOLDOWN_TICKS;
+                }
             }
+
+            // Spawn particles along the trail
+            trailManager.spawnTrailParticles(client.world);
         });
     }
 

@@ -16,6 +16,9 @@ repositories {
 	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
 	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
 	// for more information about repositories.
+	maven { url "https://maven.shedaniel.me/" }         // Cloth Config 1.19.2
+	maven { url "https://maven.terraformersmc.com/" }   // Mod Menu
+	maven { url "https://maven.nucleoid.xyz/" }
 }
 
 dependencies {
@@ -23,6 +26,10 @@ dependencies {
 	mappings "net.fabricmc:yarn:${project.findProperty('yarn_mappings')}:v2"
 	modImplementation "net.fabricmc:fabric-loader:${project.findProperty('loader_version')}"
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.findProperty('fabric_api_version')}"
+
+	// Required for the clothconfig2 API imports
+	modImplementation "me.shedaniel.cloth:cloth-config-fabric:8.3.134"
+	modCompileOnly "com.terraformersmc:modmenu:4.1.2"
 }
 
 sourceSets {
