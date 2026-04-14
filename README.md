@@ -19,7 +19,7 @@
 ## 📥 Installation
 
 1. **Install Fabric Loader** (version 0.14.0 or later) – [instructions here](https://fabricmc.net/use/)
-2. **Download the mod JAR** from [Modrinth](https://modrinth.com/mod/groundslammer) or [GitHub Releases](https://github.com/codex-bat/Fabric-GroundSlammer/releases/tag/v1.0.0)
+2. **Download the mod JAR** from [Modrinth](https://modrinth.com/mod/groundslammer) or [GitHub Releases](https://github.com/codex-bat/Fabric-GroundSlammer/releases)
 3. Place the JAR in your `mods` folder
 4. Launch Minecraft with the Fabric profile
 
