@@ -19,9 +19,9 @@ public class ModParticleFactories {
         registry.register(ModParticles.SPLASH_PIXEL_RAIN, SplashDropletRainParticle.Factory::new);
         registry.register(ModParticles.SPLASH_LANDING, SplashDropletLandingParticle.Factory::new);
         registry.register(ModParticles.LEAF_PARTICLE, LeafParticle.Factory::new);
-        registry.register(ModParticles.LEAF_MANGROVE_PARTICLE, LeafParticle.Factory::new);
-        registry.register(ModParticles.LEAF_JUNGLE_PARTICLE, LeafParticle.Factory::new);
-        registry.register(ModParticles.LEAF_AZALEA_PARTICLE, LeafParticle.Factory::new);
+        registry.register(ModParticles.LEAF_MANGROVE_PARTICLE, SimpleLeafParticle.Factory::new);
+        registry.register(ModParticles.LEAF_JUNGLE_PARTICLE, SimpleLeafParticle.Factory::new);
+        registry.register(ModParticles.LEAF_AZALEA_PARTICLE, SimpleLeafParticle.Factory::new);
         registry.register(ModParticles.LEAF_CHERRY_PARTICLE, CherryBlossomParticle.Factory::new);
     }
 }

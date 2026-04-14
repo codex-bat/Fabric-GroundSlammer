@@ -346,11 +346,12 @@ public class GroundSlammerClient implements ClientModInitializer {
             if (onLeaves) {
                 slamToPlay = config.sound.leafSlamSound;
 
-                // Get leaf colour from the block’s map colour
-                int color = blockUnder.getMapColor(world, landingBlockPos).color;
-                float r = channel(color, 16);
-                float g = channel(color, 8);
-                float b = channel(color, 0);
+                // Get leaf colour from the block’s biome colour tint
+                MinecraftClient mc = MinecraftClient.getInstance();
+                float[] rgb = computeBlockTintColor(world, landingBlockPos, blockUnder, mc);
+                float r = rgb[0];
+                float g = rgb[1];
+                float b = rgb[2];
 
                 int leafCount = (int) (config.leaf.leafCountBase * sizeMultiplier);
 
@@ -409,6 +410,19 @@ public class GroundSlammerClient implements ClientModInitializer {
         } catch (Exception ignored) {
             return new float[]{1.0f, 1.0f, 1.0f};
         }
+    }
+
+    private float[] computeBlockTintColor(ClientWorld world, BlockPos pos, BlockState state, MinecraftClient mc) {
+        if (mc == null) return new float[]{1.0f, 1.0f, 1.0f};
+
+        int tint = mc.getBlockColors().getColor(state, world, pos, 0);
+        if (tint == -1) return new float[]{1.0f, 1.0f, 1.0f};
+
+        return new float[]{
+                channel(tint, 16),
+                channel(tint, 8),
+                channel(tint, 0)
+        };
     }
 
     private void spawnGroundSlam(ClientWorld world, PlayerEntity player,

@@ -3,13 +3,17 @@
 
 package net.codex.particle.custom;
 
-import net.minecraft.client.particle.*;
+import net.minecraft.client.particle.Particle;
+import net.minecraft.client.particle.ParticleFactory;
+import net.minecraft.client.particle.ParticleTextureSheet;
+import net.minecraft.client.particle.SpriteBillboardParticle;
+import net.minecraft.client.particle.SpriteProvider;
 import net.minecraft.client.world.ClientWorld;
 
 /**
- * Smooth "leaf" particle for 1.19.2 — tuned to be slightly farther out and much less spiny.
+ * Smooth "leaf" particle for 1.20.4 — tuned to be slightly farther out and much less spiny.
  */
-public class LeafParticle extends SpriteBillboardParticle {
+public class SimpleLeafParticle extends SpriteBillboardParticle {
 
     private final SpriteProvider spriteProvider;
 
@@ -26,41 +30,27 @@ public class LeafParticle extends SpriteBillboardParticle {
     private final float initialRotation;
     private final float rotationAmount;
 
-    protected LeafParticle(ClientWorld world, double x, double y, double z,
-                           double dummyVx, double dummyVy, double dummyVz,
-                           SpriteProvider spriteProvider,
-                           float red, float green, float blue) {   // <-- new parameters
-        super(world, x, y, z);
+    protected SimpleLeafParticle(ClientWorld world, double x, double y, double z,
+                                 double dummyVx, double dummyVy, double dummyVz,
+                                 SpriteProvider spriteProvider) {
+        super(world, x, y, z, dummyVx, dummyVy, dummyVz);
         this.spriteProvider = spriteProvider;
 
         this.spawnX = x;
         this.spawnY = y;
         this.spawnZ = z;
 
-        // Apply colour immediately
-        this.red   = red;
-        this.green = green;
-        this.blue  = blue;
-
-        // scale
         this.scale = 0.12f + random.nextFloat() * 0.14f;
-
-        // life
         this.maxAge = 40 + random.nextInt(30);
 
         this.setBoundingBoxSpacing(0.05f, 0.05f);
 
-        // ====== TUNABLES ======
-        // orbit radius: increased so particles spawn and travel farther from the entity
         this.baseAngle = random.nextDouble() * Math.PI * 2.0;
-        this.orbitRadius = 0.18 + random.nextDouble() * 0.95;    // was small; now 0.18..0.60
-        this.verticalRadius = 0.30 + random.nextDouble() * 0.55; // more lift
-        // fewer revolutions over lifetime for a gentler orbit
-        this.spinMultiplier = 0.00015 + random.nextDouble() * 0.00005; // ~0.35..0.90 (smaller than before)
-        // rotation: much smaller total rotation so it doesn't spin wildly
+        this.orbitRadius = 0.18 + random.nextDouble() * 0.95;
+        this.verticalRadius = 0.30 + random.nextDouble() * 0.55;
+        this.spinMultiplier = 0.00015 + random.nextDouble() * 0.00005;
         this.initialRotation = random.nextFloat() * 0.35f;
-        this.rotationAmount = (random.nextFloat() - 0.0005f) * 0.5f; // +/-10 degrees total (was +/-30)
-        // =======================
+        this.rotationAmount = (random.nextFloat() - 0.0005f) * 0.5f;
 
         this.alpha = 1.0f;
         this.gravityStrength = 0.0f;
@@ -78,8 +68,6 @@ public class LeafParticle extends SpriteBillboardParticle {
 
     @Override
     public void tick() {
-        // DEBUG: print once per particle at age==0 so we know this constructor+tick runs
-        // System.out.println("[LeafParticle] created: orbitRadius=" + this.orbitRadius + " spinMultiplier=" + this.spinMultiplier + " rotationAmount=" + this.rotationAmount);
         super.tick();
 
         if (this.age >= this.maxAge) {
@@ -91,35 +79,23 @@ public class LeafParticle extends SpriteBillboardParticle {
         double eased = easeInOutSine(t);
         double radialEase = easeOutQuad(t);
 
-        // update previous angle so interpolation doesn't spin wildly
         this.prevAngle = this.angle;
+        this.angle = initialRotation + (float) (rotationAmount * eased);
 
-        // subtle sprite rotation
-        this.angle = initialRotation + (float)(rotationAmount * eased);
-
-        // orbital angle — slower, gentler progression
         double orbitalAngle = baseAngle + spinMultiplier * 2.0 * Math.PI * eased;
-
-        // quatre-circle modulation — smaller amplitude for subtle lobing
-        double quatreMod = 1.0 + 0.18 * Math.sin(4.0 * Math.PI * eased + baseAngle); // 0.18 amplitude (was 0.35)
-
-        // radial growth from spawn -> final orbitRadius
+        double quatreMod = 1.0 + 0.18 * Math.sin(4.0 * Math.PI * eased + baseAngle);
         double currentRadius = orbitRadius * (0.25 + 0.75 * radialEase) * quatreMod;
 
         double nx = spawnX + Math.cos(orbitalAngle) * currentRadius;
         double nz = spawnZ + Math.sin(orbitalAngle) * currentRadius;
 
-        // hemisphere-like vertical movement with more lift
         double ny = spawnY + Math.sin(t * Math.PI) * verticalRadius * 0.95;
-        ny += 0.03 * easeOutQuad(t); // slightly stronger upward bias
+        ny += 0.03 * easeOutQuad(t);
 
-        // mapping-agnostic position setter
         this.setPos(nx, ny, nz);
 
-        // subtle sprite rotation (ease-in/ease-out)
         this.angle = initialRotation + (float) (rotationAmount * eased);
 
-        // fade near end of life
         double fadeStart = 0.65;
         if (t < fadeStart) {
             this.alpha = 1.0f;
@@ -150,9 +126,7 @@ public class LeafParticle extends SpriteBillboardParticle {
                                        ClientWorld world,
                                        double x, double y, double z,
                                        double vx, double vy, double vz) {
-            return new LeafParticle(world, x, y, z, vx, vy, vz,
-                    spriteProvider,
-                    effect.red, effect.green, effect.blue);
+            return new SimpleLeafParticle(world, x, y, z, vx, vy, vz, spriteProvider);
         }
     }
 }

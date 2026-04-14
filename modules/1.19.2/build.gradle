@@ -10,6 +10,17 @@ base {
 	archivesName = project.archives_base_name
 }
 
+def exportVersion = "${project.mod_version}-${project.minecraft_version}"
+def exportBaseName = "${project.archives_base_name}-${exportVersion}"
+
+tasks.named("jar") {
+	archiveFileName.set("${exportBaseName}-dev.jar")
+}
+
+tasks.named("remapJar") {
+	archiveFileName.set("${exportBaseName}.jar")
+}
+
 repositories {
 	// Add repositories to retrieve artifacts from in here.
 	// You should only use this when depending on other mods because

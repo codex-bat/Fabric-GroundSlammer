@@ -9,7 +9,7 @@ import net.minecraft.client.world.ClientWorld;
 /**
  * Smooth "leaf" particle for 1.19.2 — tuned to be slightly farther out and much less spiny.
  */
-public class LeafParticle extends SpriteBillboardParticle {
+public class SimpleLeafParticle extends SpriteBillboardParticle {
 
     private final SpriteProvider spriteProvider;
 
@@ -26,21 +26,15 @@ public class LeafParticle extends SpriteBillboardParticle {
     private final float initialRotation;
     private final float rotationAmount;
 
-    protected LeafParticle(ClientWorld world, double x, double y, double z,
-                           double dummyVx, double dummyVy, double dummyVz,
-                           SpriteProvider spriteProvider,
-                           float red, float green, float blue) {   // <-- new parameters
+    protected SimpleLeafParticle(ClientWorld world, double x, double y, double z,
+                                 double dummyVx, double dummyVy, double dummyVz,
+                                 SpriteProvider spriteProvider) {
         super(world, x, y, z);
         this.spriteProvider = spriteProvider;
 
         this.spawnX = x;
         this.spawnY = y;
         this.spawnZ = z;
-
-        // Apply colour immediately
-        this.red   = red;
-        this.green = green;
-        this.blue  = blue;
 
         // scale
         this.scale = 0.12f + random.nextFloat() * 0.14f;
@@ -150,9 +144,7 @@ public class LeafParticle extends SpriteBillboardParticle {
                                        ClientWorld world,
                                        double x, double y, double z,
                                        double vx, double vy, double vz) {
-            return new LeafParticle(world, x, y, z, vx, vy, vz,
-                    spriteProvider,
-                    effect.red, effect.green, effect.blue);
+            return new SimpleLeafParticle(world, x, y, z, vx, vy, vz, spriteProvider);
         }
     }
 }
