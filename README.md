@@ -69,7 +69,7 @@ See the [LICENSE](LICENSE) file for details.
 
 ## 💬 Contact & Support
 
-- Discord: [Join the community](https://codex-bat.github.io/discord)
+- Discord: [Join the community](https://codexbat.dev/discord)
 - GitHub Issues: [Report bugs or suggest features](https://github.com/codex-bat/Fabric-GroundSlammer/issues)
 - Modrinth: [Frontpage](https://modrinth.com/mod/groundslammer)
 
