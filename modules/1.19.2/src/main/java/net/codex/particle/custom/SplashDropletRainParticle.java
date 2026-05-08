@@ -3,18 +3,21 @@
 
 package net.codex.particle.custom;
 
+import net.codex.particle.ModParticles;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.particle.*;
 import net.minecraft.client.world.ClientWorld;
+import net.minecraft.particle.ParticleEffect;
 
 /**
  * Rain variant of splash droplet that spawns a landing animation on impact,
  * and passes its colour to that landing particle.
  */
 public class SplashDropletRainParticle extends SpriteBillboardParticle {
-
     // store provider so I can create the landing animation with the same atlas
     private final SpriteProvider spriteProvider;
+
+    private float amountMultiplier = 1.0f;
 
     // store the current colour so landing particle can inherit it
     private float rCol = 1.0f;
@@ -49,17 +52,14 @@ public class SplashDropletRainParticle extends SpriteBillboardParticle {
 
         // When hit the ground, spawn the landing animation particle and die
         if (this.onGround) {
-            double landY = this.y + 0.01; // or ps.spawnY + 0.01
+            double landY = this.y + 0.01;
 
-            SplashDropletLandingParticle landing = new SplashDropletLandingParticle(
-                    (ClientWorld) this.world,
+            SplashDropletLandingParticle.setPendingAmount(this.amountMultiplier);
+            this.world.addParticle(
+                    (ParticleEffect) ModParticles.SPLASH_LANDING,
                     this.x, landY, this.z,
-                    this.spriteProvider,
                     this.rCol, this.gCol, this.bCol
             );
-
-            // Add concrete Particle instance via particle manager
-            MinecraftClient.getInstance().particleManager.addParticle(landing);
 
             this.markDead();
             return;
@@ -110,6 +110,7 @@ public class SplashDropletRainParticle extends SpriteBillboardParticle {
             particle.bCol = effect.blue;
 
             // Apply scale based on amountMultiplier (optional: can also factor in entity size if you want)
+            particle.amountMultiplier = effect.amountMultiplier;
             particle.scale *= effect.amountMultiplier;
 
             // Optional: scale lifetime by amountMultiplier to make bigger bursts last slightly longer

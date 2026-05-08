@@ -3,37 +3,39 @@
 
 package net.codex.particle.custom;
 
-import net.minecraft.client.particle.Particle;
-import net.minecraft.client.particle.ParticleFactory;
-import net.minecraft.client.particle.SpriteBillboardParticle;
-import net.minecraft.client.particle.SpriteProvider;
-import net.minecraft.client.render.Camera;
+import net.minecraft.client.particle.*;
 import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.client.texture.Sprite;
+import net.minecraft.client.render.Camera;
 import net.minecraft.client.world.ClientWorld;
+import net.minecraft.client.texture.Sprite;
 import net.minecraft.particle.DefaultParticleType;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.random.Random;
-
-import java.lang.reflect.Method;
 
 /**
- * Robust landing animation particle that supports multiple SpriteProvider APIs via reflection.
+ * Landing animation particle that plays a flat ground splash.
+ * Now uses the same reliable SpriteProvider.getSprite(age, maxAge) as GroundSplash.
  */
 public class SplashDropletLandingParticle extends SpriteBillboardParticle {
-
     private final SpriteProvider spriteProvider;
     private Sprite currentSprite;
+
+    private static final ThreadLocal<Float> PENDING_AMOUNT =
+            ThreadLocal.withInitial(() -> 1.0f);
+
+    public static void setPendingAmount(float amount) {
+        PENDING_AMOUNT.set(amount);
+    }
+
+    private static float consumePendingAmount() {
+        float amount = PENDING_AMOUNT.get();
+        PENDING_AMOUNT.remove();
+        return amount;
+    }
 
     private final int ticksPerFrame;
     private final int targetFrames;
     private final int maxFrames = 6;
     private final int minFramesIfDies = 3;
-
-    private static Method provider_getSprite_age_max = null;
-    private static Method provider_getSprite_index = null;
-    private static Method provider_getSprite_random = null;
-    private static boolean providerMethodsResolved = false;
 
     protected SplashDropletLandingParticle(ClientWorld world, double x, double y, double z,
                                            SpriteProvider spriteProvider,
@@ -41,6 +43,7 @@ public class SplashDropletLandingParticle extends SpriteBillboardParticle {
         super(world, x, y, z, 0, 0, 0);
         this.spriteProvider = spriteProvider;
 
+        // Pin particle to its spawn position
         this.prevPosX = this.x;
         this.prevPosY = this.y;
         this.prevPosZ = this.z;
@@ -48,36 +51,36 @@ public class SplashDropletLandingParticle extends SpriteBillboardParticle {
         this.collidesWithWorld = false;
         this.gravityStrength = 0.0f;
         this.velocityMultiplier = 1.0f;
-        this.scale = 0.12f;
+        float baseScale = 0.75f;
+        this.scale = baseScale * consumePendingAmount();
+
         this.setColor(r, g, b);
 
-        this.ticksPerFrame = 2;
+        this.ticksPerFrame = 2; // each frame lasts 2 ticks
 
+        // Choose number of frames to play
         if (this.random.nextFloat() < 0.80f) {
             this.targetFrames = this.maxFrames;
         } else {
             this.targetFrames = this.minFramesIfDies + this.random.nextInt(this.maxFrames - this.minFramesIfDies);
         }
 
-        this.maxAge = this.targetFrames * this.ticksPerFrame + 1;
+        // maxAge = frames * ticksPerFrame   (no +1, so age ranges 0..maxAge-1)
+        this.maxAge = this.targetFrames * this.ticksPerFrame;
 
-        resolveProviderMethods();
-
-        int initSynthetic = MathHelper.clamp(0, 0, Math.max(0, this.maxAge - 1));
-        Sprite init = getSpriteForIndex(initSynthetic, this.maxAge, 0);
+        // Get initial sprite using the same method that works elsewhere
+        Sprite init = this.spriteProvider.getSprite(0, this.maxAge);
         if (init != null) {
             this.setSprite(init);
             this.currentSprite = init;
-        } else {
-            try {
-                Sprite fallback = this.spriteProvider.getSprite(this.random);
-                if (fallback != null) {
-                    this.setSprite(fallback);
-                    this.currentSprite = fallback;
-                }
-            } catch (Throwable ignored) {
-            }
         }
+
+        // Debug (remove after verifying)
+        // System.err.println("[Landing] created targetFrames=" + this.targetFrames + " maxAge=" + this.maxAge);
+    }
+
+    public void setScale(float scale) {
+        this.scale = scale;
     }
 
     @Override
@@ -87,15 +90,13 @@ public class SplashDropletLandingParticle extends SpriteBillboardParticle {
             return;
         }
 
+        // Keep position fixed
         this.x = this.prevPosX;
         this.y = this.prevPosY;
         this.z = this.prevPosZ;
 
-        int frameIndex = Math.min(this.age / this.ticksPerFrame, this.targetFrames - 1);
-        int syntheticAgeForFrame = (frameIndex * this.maxAge) / Math.max(1, this.targetFrames - 1);
-        syntheticAgeForFrame = MathHelper.clamp(syntheticAgeForFrame, 0, Math.max(0, this.maxAge - 1));
-
-        Sprite s = getSpriteForIndex(syntheticAgeForFrame, this.maxAge, frameIndex);
+        // Update sprite using the age‑based provider method (exactly like GroundSplash)
+        Sprite s = this.spriteProvider.getSprite(this.age, this.maxAge);
         if (s != null) {
             this.setSprite(s);
             this.currentSprite = s;
@@ -106,8 +107,8 @@ public class SplashDropletLandingParticle extends SpriteBillboardParticle {
     public void buildGeometry(VertexConsumer vc, Camera camera, float tickDelta) {
         Sprite sprite = this.currentSprite;
         if (sprite == null) {
-            int fallbackSynthetic = MathHelper.clamp(0, 0, Math.max(0, this.maxAge - 1));
-            sprite = getSpriteForIndex(fallbackSynthetic, this.maxAge, 0);
+            // Fallback – should never happen
+            sprite = this.spriteProvider.getSprite(0, this.maxAge);
             if (sprite == null) return;
         }
 
@@ -122,6 +123,7 @@ public class SplashDropletLandingParticle extends SpriteBillboardParticle {
         final float fullSize = this.getSize(tickDelta);
         final float half = fullSize * 0.5f;
 
+        // Slightly above ground to avoid z‑fighting
         final float yBottom = py + 0.01f;
         final float x1 = px - half;
         final float x2 = px + half;
@@ -139,11 +141,13 @@ public class SplashDropletLandingParticle extends SpriteBillboardParticle {
         final float b = this.blue;
         final float a = this.alpha;
 
+        // First winding (counter‑clockwise)
         vc.vertex(x1, yBottom, z1).texture(u1, v1).color(r, g, b, a).light(light).next();
         vc.vertex(x2, yBottom, z1).texture(u2, v1).color(r, g, b, a).light(light).next();
         vc.vertex(x2, yBottom, z2).texture(u2, v2).color(r, g, b, a).light(light).next();
         vc.vertex(x1, yBottom, z2).texture(u1, v2).color(r, g, b, a).light(light).next();
 
+        // Second winding (clockwise) for double‑sided rendering
         vc.vertex(x2, yBottom, z1).texture(u2, v1).color(r, g, b, a).light(light).next();
         vc.vertex(x1, yBottom, z1).texture(u1, v1).color(r, g, b, a).light(light).next();
         vc.vertex(x1, yBottom, z2).texture(u1, v2).color(r, g, b, a).light(light).next();
@@ -151,76 +155,11 @@ public class SplashDropletLandingParticle extends SpriteBillboardParticle {
     }
 
     @Override
-    public net.minecraft.client.particle.ParticleTextureSheet getType() {
-        return net.minecraft.client.particle.ParticleTextureSheet.PARTICLE_SHEET_TRANSLUCENT;
+    public ParticleTextureSheet getType() {
+        return ParticleTextureSheet.PARTICLE_SHEET_TRANSLUCENT;
     }
 
-    private static synchronized void resolveProviderMethods() {
-        if (providerMethodsResolved) return;
-        providerMethodsResolved = true;
-
-        try {
-            provider_getSprite_age_max = SpriteProvider.class.getMethod("getSprite", int.class, int.class);
-        } catch (NoSuchMethodException ignored) {
-            provider_getSprite_age_max = null;
-        }
-
-        try {
-            provider_getSprite_index = SpriteProvider.class.getMethod("getSprite", int.class);
-        } catch (NoSuchMethodException ignored) {
-            provider_getSprite_index = null;
-        }
-
-        try {
-            provider_getSprite_random = SpriteProvider.class.getMethod("getSprite", Random.class);
-        } catch (NoSuchMethodException ignored) {
-            provider_getSprite_random = null;
-        }
-    }
-
-    private Sprite getSpriteForIndex(int syntheticAge, int maxAge, int frameIndex) {
-        try {
-            if (provider_getSprite_age_max != null) {
-                Object o = provider_getSprite_age_max.invoke(this.spriteProvider, syntheticAge, maxAge);
-                if (o instanceof Sprite) return (Sprite) o;
-            }
-        } catch (Throwable ignored) {
-        }
-
-        try {
-            if (provider_getSprite_index != null) {
-                int providerIndex;
-                if (this.targetFrames <= 1) {
-                    providerIndex = 0;
-                } else {
-                    double ratio = (double) frameIndex / (double) Math.max(1, (this.targetFrames - 1));
-                    providerIndex = (int) Math.round(ratio * (this.maxFrames - 1));
-                }
-                providerIndex = MathHelper.clamp(providerIndex, 0, this.maxFrames - 1);
-
-                Object o = provider_getSprite_index.invoke(this.spriteProvider, providerIndex);
-                if (o instanceof Sprite) return (Sprite) o;
-            }
-        } catch (Throwable ignored) {
-        }
-
-        try {
-            if (provider_getSprite_random != null) {
-                Random seeded = Random.create(syntheticAge * 31L + maxAge);
-                Object o = provider_getSprite_random.invoke(this.spriteProvider, seeded);
-                if (o instanceof Sprite) return (Sprite) o;
-            }
-        } catch (Throwable ignored) {
-        }
-
-        try {
-            return this.spriteProvider.getSprite(this.random);
-        } catch (Throwable ignored) {
-        }
-
-        return null;
-    }
-
+    // Factory for when the particle is registered with a DefaultParticleType
     public static final class Factory implements ParticleFactory<DefaultParticleType> {
         private final SpriteProvider spriteProvider;
 
@@ -232,7 +171,13 @@ public class SplashDropletLandingParticle extends SpriteBillboardParticle {
         public Particle createParticle(DefaultParticleType data, ClientWorld world,
                                        double x, double y, double z,
                                        double vx, double vy, double vz) {
-            return new SplashDropletLandingParticle(world, x, y, z, this.spriteProvider, 1f, 1f, 1f);
+
+            SplashDropletLandingParticle p =
+                    new SplashDropletLandingParticle(world, x, y, z, this.spriteProvider, 1f, 1f, 1f);
+
+            p.setColor((float) vx, (float) vy, (float) vz);
+
+            return p;
         }
     }
 }

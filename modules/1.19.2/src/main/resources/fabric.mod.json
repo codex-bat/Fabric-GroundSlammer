@@ -8,9 +8,9 @@
 		"Codex.bat"
 	],
 	"contact": {
-		"homepage": "https://codex-bat.github.io/",
-		"sources": "https://github.com/codex-bat/Fabric-GroundSlammer-1.19.2",
-		"issues": "https://github.com/codex-bat/Fabric-GroundSlammer-1.19.2/issues"
+		"homepage": "https://codexbat.dev/",
+		"sources": "https://github.com/codex-bat/GroundSlammer",
+		"issues": "https://github.com/codex-bat/GroundSlammer/issues"
 	},
 	"custom": {
 		"modmenu": {
@@ -21,7 +21,7 @@
 	},
 	"license": "GPL-3.0-or-later",
 	"icon": "assets/groundslammer/icon.png",
-	"environment": "*",
+	"environment": "client",
 	"entrypoints": {
 		"main": [
 			"net.codex.GroundSlammer"

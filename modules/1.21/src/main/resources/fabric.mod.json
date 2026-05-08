@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "id": "groundslammer",
+  "version": "${version}",
+  "name": "GroundSlammer",
+  "description": "A client-side Fabric mod that improves landings in Minecraft, featuring custom particles and sound effects.",
+  "authors": [
+    "Codex.bat"
+  ],
+  "contact": {
+    "homepage": "https://codexbat.dev/",
+    "sources": "https://github.com/codex-bat/GroundSlammer",
+    "issues": "https://github.com/codex-bat/GroundSlammer/issues"
+  },
+  "custom": {
+    "modmenu": {
+      "links": {
+        "groundslammer.discord": "https://discord.gg/9EBsDhJDUN"
+      }
+    }
+  },
+  "license": "GPL-3.0-or-later",
+  "icon": "assets/groundslammer/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "main": [
+      "net.codex.GroundSlammer"
+    ],
+    "fabric-datagen": [
+      "net.codex.GroundSlammerDataGenerator"
+    ],
+    "client": [
+      "net.codex.GroundSlammerClient"
+    ],
+    "modmenu": [
+      "net.codex.config.ModMenuIntegration"
+    ]
+  },
+  "mixins": [
+    "groundslammer.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.18.4",
+    "minecraft": "~${minecraft_version}",
+    "java": ">=21",
+    "fabric-api": "*",
+    "cloth-config": "*"
+  },
+  "suggests": {
+    "modmenu": "*"
+  }
+}

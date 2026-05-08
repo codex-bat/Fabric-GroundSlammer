@@ -324,24 +324,21 @@ public class GroundSlammerClient implements ClientModInitializer {
 
         boolean onLeaves = blockUnder.isIn(BlockTags.LEAVES);
         boolean isSnow = blockUnder.isOf(Blocks.SNOW) || blockUnder.isOf(Blocks.SNOW_BLOCK);
-        boolean isIce = blockUnder.isOf(Blocks.ICE)
-                || blockUnder.isOf(Blocks.PACKED_ICE)
-                || blockUnder.isOf(Blocks.BLUE_ICE)
-                || blockUnder.isOf(Blocks.FROSTED_ICE);
-        boolean isGlassBlock = blockUnder.isOf(Blocks.GLASS);
+        boolean isIce = blockUnder.isIn(BlockTags.ICE);
+        boolean isGlass = blockUnder.isIn(BlockTags.IMPERMEABLE) && !isIce;
 
         SoundEvent slamToPlay = config.sound.slamSound;
-        if (isSnow) slamToPlay = config.sound.snowSlamSound;
-        else if (isIce || isGlassBlock) slamToPlay = config.sound.iceSlamSound;
+        if (isSnow) {
+            slamToPlay = config.sound.snowSlamSound;
+        } else if (isIce || isGlass) {
+            slamToPlay = config.sound.iceSlamSound;
+        }
 
         float amountMultiplier = 0;
         if (feetY <= spawnY + config.detection.spawnYEps || entity.isOnGround()) {
             amountMultiplier = MathHelper.clamp(entityWidth, 0.6f, 3.0f);
 
-            if (entity == MinecraftClient.getInstance().player) {
-                //System.out.println("Ground slam event firing with velocity: " + Math.abs(prevVelY));
-                GroundSlamEvent.EVENT.invoker().onGroundSlam(entity, Math.abs(prevVelY));
-            }
+            GroundSlamEvent.EVENT.invoker().onGroundSlam(entity, Math.abs(prevVelY));
 
             if (onLeaves) {
                 slamToPlay = config.sound.leafSlamSound;
@@ -369,10 +366,7 @@ public class GroundSlammerClient implements ClientModInitializer {
 
             lastSpawnMs.put(entity, nowMs);
         } else {
-            if (entity == MinecraftClient.getInstance().player) {
-                //System.out.println("Ground slam event firing with velocity: " + Math.abs(prevVelY));
-                GroundSlamEvent.EVENT.invoker().onGroundSlam(entity, Math.abs(prevVelY));
-            }
+            GroundSlamEvent.EVENT.invoker().onGroundSlam(entity, Math.abs(prevVelY));
 
             boolean useSimple = isAreaOpen(world, entity, spawnX, spawnY, spawnZ);
             pendingSpawns.put(entity, new PendingSpawn(
@@ -385,8 +379,22 @@ public class GroundSlammerClient implements ClientModInitializer {
     }
 
     private void onGroundSlam(Entity entity, double downwardVelocity) {
-        if (entity == MinecraftClient.getInstance().player) {
-            CameraShakeManager.addImpact((float) downwardVelocity);
+        MinecraftClient client = MinecraftClient.getInstance();
+        Entity camera = client.getCameraEntity();
+        if (camera == null) return;
+
+        double distance = camera.squaredDistanceTo(entity);
+        double maxDistance = 256.0;      // 16 blocks squared
+        if (distance > maxDistance) return;
+
+        // Distance factor: 1 at 0, 0 at maxDistance (linear)
+        double factor = 1.0 - Math.sqrt(distance) / Math.sqrt(maxDistance);
+        // Optional: apply an exponent for a steeper falloff
+        factor = Math.pow(factor, 1.5);
+
+        float scaledVelocity = (float) (downwardVelocity * factor);
+        if (scaledVelocity > 0.01f) {
+            CameraShakeManager.addImpact(scaledVelocity);
         }
     }
 
